@@ -1,83 +1,68 @@
 import requests
 import re
+import urllib
 from bs4 import BeautifulSoup
 
 
-search = "internet truc"
+def get_first_result(search_results):
 
-
-
-
-def get_url_from_search(search_terms):
-    search_formated = ""
-    for x in search_terms.split():
-        search_formated = search_formated + f"{x}+"
-
-    search_url = f"https://fr.wikipedia.org/w/index.php?title=Sp%C3%A9cial:Recherche&go=Go&ns0=1&search={search_formated}"
-    print(search_url)
-    
-    r = requests.get(search_url)
-    print(r.history)
-    soup = BeautifulSoup(r.content, features="html.parser")
+    soup = BeautifulSoup(search_results, features="html.parser")
 
     search_results_ul = soup.find("ul", {"class": "mw-search-results"})
+    search_results_li = search_results_ul.find_all("li")
 
-    search_results_list_items = search_results_ul.find_all("li")
-
-    first_result = search_results_list_items[0].find("a", href=True)
+    first_result = search_results_li[0].find("a", href=True)
     first_result_url = first_result['href']
 
-    wiki_url_prefix = "https://fr.wikipedia.org/"
-    wiki_page_url = f"{wiki_url_prefix}{first_result_url}"
-    return wiki_page_url
+    return f"https://fr.wikipedia.org/{first_result_url}"
+
+
+def resolve_page_for_search(search_terms):
+
+    search_formated = " "
+    for x in search_terms.split():
+        search_formated = search_formated + f"{x}+"
+    search_url = f"https://fr.wikipedia.org/w/index.php?title=Sp%C3%A9cial:Recherche&go=Go&ns0=1&search={search_formated}"
+    
+
+    r = requests.get(search_url)
+    for code in r.history:
+        if code.is_redirect:
+            return r.url
+    return get_first_result(r.content)
 
 
 def remove_from_soup(soup):
-    table_to_remove = soup.find_all("table")
-    for d in table_to_remove:
-        d.extract()
-    
-    div_to_remove = soup.find_all("div")
-    for d in div_to_remove:
-        d.extract()
-    
-    sup_to_remove = soup.find_all("sup")
-    for d in sup_to_remove:
-        d.extract()
 
-    span_to_remove = soup.find_all("span")
-    for d in span_to_remove:
-        d.extract()
+    tags_to_remove = ["table", "div", "sup", "span"]
+    for tag in tags_to_remove:
+        to_remove = soup.find_all(tag)
+        for item in to_remove:
+            item.extract()
     
     p_to_remove = soup.find_all("p", {"class": "mw-empty-elt"})
-    for d in p_to_remove:
-        d.extract()
+    for p in p_to_remove:
+        p.extract()
 
 
 def get_article_links(page_url):
     r = requests.get(page_url)
 
     soup = BeautifulSoup(r.content, features="html.parser")
-
     divs = soup.find_all("div", {"class": "mw-parser-output"})
 
-    for d in divs:
-        if d.find("div", {"class": "nopopups"}):
+    for div in divs:
+        if div.find("div", {"class": "nopopups"}):
             continue
         else:
-            div = d
-            break
+            remove_from_soup(div)
+            tags = div.find_all(["p","li"])
+            return tags
     
-    remove_from_soup(div)
-    
-    p_tags = div.find_all(["p","li"])
 
-    return p_tags
-
-def find_first_link(p_tags):
-    for p_tag in p_tags:
-        
-        a_list = p_tag.find_all("a")
+def find_first_link(tags):
+    for tag in tags:
+        a_list = tag.find_all("a")
 
         for link in a_list:
             link = str(link)
@@ -91,50 +76,43 @@ def find_first_link(p_tags):
 
     raise RuntimeError("no valid link found")
 
+
 def get_first_link(page_url):
     article_links = get_article_links(page_url)
-    
-    flink = find_first_link(article_links)
-    
-
-    wiki_url_prefix = "https://fr.wikipedia.org"
-
-    return f"{wiki_url_prefix}{flink}"
-    
-    
-    
-
-
+    first_link = find_first_link(article_links)
+    return f"https://fr.wikipedia.org{first_link}"
 
 
 def is_philosophie(url):
     return url == "https://fr.wikipedia.org/wiki/Philosophie"
-        
-
-# =============== FROM ONE==============
-url = "https://fr.wikipedia.org/wiki/Laitue"
-jumps = 0
-while not is_philosophie(url):
-    print(url)
-    url = get_first_link(url)
-    jumps += 1
-print(f"FOUND in {jumps} jumps")
-
 
 
 #=============== FROM MANY SEARCH ==============
-# search_term = ["internet truc", "minecraft"]
 
-# for term in search_term:
-#     url = get_url_from_search(term)
+search_term = ["internet truc", "minecraft", "Cinema muet", "Temps", "Anglais", "Realite", "alphabet phonetique international"]
 
-#     jumps = 0
-#     while not is_philosophie(url):
-#         print(url)
-#         url = get_first_link(url)
-#         jumps += 1
-#     print("FOUND in {jumps} jumps")
-    
+for term in search_term:
+    print(f'\n\nSearching for "{term}"\n')
+    url = resolve_page_for_search(term)
+
+    jumps = 0
+    while not is_philosophie(url):
+        print(urllib.parse.unquote(url).split("/")[-1])
+        url = get_first_link(url)
+        jumps += 1
+    print(f"Found Philosophie in {jumps} jumps")
+
+
+# =============== FROM ONE==============
+
+# url = "https://fr.wikipedia.org/wiki/Laitue"
+# jumps = 0
+# while not is_philosophie(url):
+#     print(urllib.parse.unquote(url))
+#     url = get_first_link(url)
+#     jumps += 1
+# print(f"Found Philosophie in {jumps} jumps")
+
     
 #=============== TESTS ==============
 

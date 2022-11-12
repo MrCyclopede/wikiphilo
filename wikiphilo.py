@@ -32,12 +32,7 @@ def get_url_from_search(search_terms):
     return wiki_page_url
 
 
-def get_article_content(page_url):
-    r = requests.get(page_url)
-    soup = BeautifulSoup(r.content, features="html.parser")
-
-    content = soup.find("div", {"class": "mw-parser-output"})
-    
+def remove_from_soup(soup):
     table_to_remove = soup.find_all("table")
     for d in table_to_remove:
         d.extract()
@@ -50,77 +45,61 @@ def get_article_content(page_url):
     for d in sup_to_remove:
         d.extract()
 
-    first_p = content.find_all("p")[0]
-    return first_p
+    span_to_remove = soup.find_all("span")
+    for d in span_to_remove:
+        d.extract()
     
+    p_to_remove = soup.find_all("p", {"class": "mw-empty-elt"})
+    for d in p_to_remove:
+        d.extract()
 
-def find_first_link(article_content):
-    a = article_content
 
-    while(len(a)):
-        link_begin = a.find('/wiki/')
-        link_end = a[link_begin + 1:].find('"') + 1
-        suffix = a[link_begin:link_end + link_begin]
-        if not "API" in suffix:
-            return suffix
+def get_article_links(page_url):
+    r = requests.get(page_url)
+
+    soup = BeautifulSoup(r.content, features="html.parser")
+
+    divs = soup.find_all("div", {"class": "mw-parser-output"})
+
+    for d in divs:
+        if d.find("div", {"class": "nopopups"}):
+            continue
         else:
-            a = a[link_begin+link_end :]
-        
+            div = d
+            break
     
+    remove_from_soup(div)
     
-    # suffix = a[link_begin:link_end]
+    p_tags = div.find_all(["p","li"])
 
-    # a = re.search("\)[^\(]*?<a.*?<\/a>", article_content).group(0)
-    # link_begin = a.find('/wiki')
-    # link_end = a[link_begin:].find('"')
+    return p_tags
 
-    
-    # print(suffix)
-    # return suffix
-    while(len(article_content)):
+def find_first_link(p_tags):
+    for p_tag in p_tags:
         
-        link_begin = article_content.find("<a")
-        link_end = article_content.find("/a>")
+        a_list = p_tag.find_all("a")
 
-        print("\n\n\n=========")
-        print(article_content)
-        print(f"Testing:{article_content[link_begin:link_end]}")
-        print(f"before char is: |{article_content[link_begin-1]}|")
-        print(f"after char is: |{article_content[link_end + 3]}|")
-
-        if article_content[link_begin - 1] not in [" ", ">"]:
-            article_content = article_content[link_end + 3:]
-            # print("invalid link, no space before") 
-
-        elif article_content[link_end + 3] not in [" ", ",", ".", "?", "!", "<"]:
-            article_content = article_content[link_end + 3:]
-            # print("invalid link, no space or puncutation after") 
-
-        else:
-            # print(f"found link: '{article_content[link_begin - 1:link_end + 4]}'")
-            return article_content[link_begin:link_end + 3]
-
-
-
-
-        
+        for link in a_list:
+            link = str(link)
+            if "wiktionary.org" in link:
+                continue
+            link_begin = link.find('/wiki/')
+            link_end = link[link_begin + 1:].find('"') + 1
+            suffix = link[link_begin:link_end + link_begin]
+            if not "API" in suffix:
+                return suffix
 
     raise RuntimeError("no valid link found")
 
 def get_first_link(page_url):
-    article_content = str(get_article_content(page_url))
-    # link_content = find_first_link(article_content)
-
-
-    # suffix_start = link_content.find("/wiki")
-    # suffix_end = link_content[suffix_start:].find('"') + suffix_start
-
-    # link_suffix = link_content[suffix_start: suffix_end]
-    link_suffix = find_first_link(article_content)
+    article_links = get_article_links(page_url)
+    
+    flink = find_first_link(article_links)
+    
 
     wiki_url_prefix = "https://fr.wikipedia.org"
 
-    return f"{wiki_url_prefix}{link_suffix}"
+    return f"{wiki_url_prefix}{flink}"
     
     
     
@@ -132,8 +111,8 @@ def is_philosophie(url):
     return url == "https://fr.wikipedia.org/wiki/Philosophie"
         
 
-
-url = "https://fr.wikipedia.org/wiki/Casquette"
+# =============== FROM ONE==============
+url = "https://fr.wikipedia.org/wiki/Laitue"
 jumps = 0
 while not is_philosophie(url):
     print(url)
@@ -141,6 +120,9 @@ while not is_philosophie(url):
     jumps += 1
 print(f"FOUND in {jumps} jumps")
 
+
+
+#=============== FROM MANY SEARCH ==============
 # search_term = ["internet truc", "minecraft"]
 
 # for term in search_term:
@@ -154,7 +136,7 @@ print(f"FOUND in {jumps} jumps")
 #     print("FOUND in {jumps} jumps")
     
     
-
+#=============== TESTS ==============
 
 # url_to_test = [
 #     "https://fr.wikipedia.org/wiki/Les_Cent_Trucs",
@@ -163,6 +145,10 @@ print(f"FOUND in {jumps} jumps")
 #     "https://fr.wikipedia.org/wiki/Anglais",
 #     "https://fr.wikipedia.org/wiki/R%C3%A9alit%C3%A9",
 #     "https://fr.wikipedia.org/wiki/Alphabet_phon%C3%A9tique_international",
+#     "https://fr.wikipedia.org/wiki/Anthropologie",
+#     "https://fr.wikipedia.org/wiki/Casquette",
+    # "https://fr.wikipedia.org/wiki/Latin",
+#         "https://fr.wikipedia.org/wiki/Polissage",
 # ]
 
 

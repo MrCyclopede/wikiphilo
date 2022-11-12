@@ -1,8 +1,7 @@
 import requests
-import re
 import urllib
 from bs4 import BeautifulSoup
-
+import articles
 
 def get_first_result(search_results):
 
@@ -24,7 +23,6 @@ def resolve_page_for_search(search_terms):
         search_formated = search_formated + f"{x}+"
     search_url = f"https://fr.wikipedia.org/w/index.php?title=Sp%C3%A9cial:Recherche&go=Go&ns0=1&search={search_formated}"
     
-
     r = requests.get(search_url)
     for code in r.history:
         if code.is_redirect:
@@ -53,7 +51,11 @@ def get_article_links(page_url):
 
     for div in divs:
         if div.find("div", {"class": "nopopups"}):
+
+            # TODO NOPOPUPS IS NOT A GOOD EXCLUSION : https://fr.wikipedia.org/wiki/Figueras
             continue
+        # elif div.find("span", {"class": "noprint"}):
+        #     continue
         else:
             remove_from_soup(div)
             tags = div.find_all(["p","li"])
@@ -87,25 +89,42 @@ def is_philosophie(url):
     return url == "https://fr.wikipedia.org/wiki/Philosophie"
 
 
-#=============== FROM MANY SEARCH ==============
+#=============== FROM ARTICLES LIST ==============
 
-search_term = ["internet truc", "minecraft", "Cinema muet", "Temps", "Anglais", "Realite", "alphabet phonetique international"]
-
-for term in search_term:
-    print(f'\n\nSearching for "{term}"\n')
-    url = resolve_page_for_search(term)
-
+urls = articles.get_url_list()
+for url in urls:
+    print("\n\n=====================")
     jumps = 0
     while not is_philosophie(url):
         print(urllib.parse.unquote(url).split("/")[-1])
-        url = get_first_link(url)
+        try:
+            url = get_first_link(url)
+        except Exception as e:
+            print("EXCEPTION: ", e)
+            break
         jumps += 1
     print(f"Found Philosophie in {jumps} jumps")
 
 
+#=============== FROM MANY SEARCH ==============
+
+# search_term = ["internet truc", "minecraft", "Cinema muet", "Temps", "Anglais", "Realite", "alphabet phonetique international"]
+
+# for term in search_term:
+#     print(f'\n\nSearching for "{term}"\n')
+#     url = resolve_page_for_search(term)
+
+#     jumps = 0
+#     while not is_philosophie(url):
+#         print(urllib.parse.unquote(url).split("/")[-1])
+#         url = get_first_link(url)
+#         jumps += 1
+#     print(f"Found Philosophie in {jumps} jumps")
+
+
 # =============== FROM ONE==============
 
-# url = "https://fr.wikipedia.org/wiki/Laitue"
+# url = "https://fr.wikipedia.org/wiki/Figueras"
 # jumps = 0
 # while not is_philosophie(url):
 #     print(urllib.parse.unquote(url))

@@ -14,8 +14,10 @@ def get_url_from_search(search_terms):
         search_formated = search_formated + f"{x}+"
 
     search_url = f"https://fr.wikipedia.org/w/index.php?title=Sp%C3%A9cial:Recherche&go=Go&ns0=1&search={search_formated}"
-
+    print(search_url)
+    
     r = requests.get(search_url)
+    print(r.history)
     soup = BeautifulSoup(r.content, features="html.parser")
 
     search_results_ul = soup.find("ul", {"class": "mw-search-results"})
@@ -43,18 +45,38 @@ def get_article_content(page_url):
     div_to_remove = soup.find_all("div")
     for d in div_to_remove:
         d.extract()
+    
+    sup_to_remove = soup.find_all("sup")
+    for d in sup_to_remove:
+        d.extract()
 
     first_p = content.find_all("p")[0]
     return first_p
     
 
 def find_first_link(article_content):
-    print(article_content)
+    a = article_content
 
-    # a = re.search("\)[^\(]*?<a.*?<\/a>", article_content)
+    while(len(a)):
+        link_begin = a.find('/wiki/')
+        link_end = a[link_begin + 1:].find('"') + 1
+        suffix = a[link_begin:link_end + link_begin]
+        if not "API" in suffix:
+            return suffix
+        else:
+            a = a[link_begin+link_end :]
+        
     
-    # print(a)
-    # return a
+    
+    # suffix = a[link_begin:link_end]
+
+    # a = re.search("\)[^\(]*?<a.*?<\/a>", article_content).group(0)
+    # link_begin = a.find('/wiki')
+    # link_end = a[link_begin:].find('"')
+
+    
+    # print(suffix)
+    # return suffix
     while(len(article_content)):
         
         link_begin = article_content.find("<a")
@@ -87,14 +109,14 @@ def find_first_link(article_content):
 
 def get_first_link(page_url):
     article_content = str(get_article_content(page_url))
-    link_content = find_first_link(article_content)
+    # link_content = find_first_link(article_content)
 
 
-    suffix_start = link_content.find("/wiki")
-    suffix_end = link_content[suffix_start:].find('"') + suffix_start
+    # suffix_start = link_content.find("/wiki")
+    # suffix_end = link_content[suffix_start:].find('"') + suffix_start
 
-    link_suffix = link_content[suffix_start: suffix_end]
-    
+    # link_suffix = link_content[suffix_start: suffix_end]
+    link_suffix = find_first_link(article_content)
 
     wiki_url_prefix = "https://fr.wikipedia.org"
 
@@ -106,32 +128,46 @@ def get_first_link(page_url):
 
 
 
-# def is_philosophie(url):
-#     return url == "https://fr.wikipedia.org/wiki/Philosophie"
+def is_philosophie(url):
+    return url == "https://fr.wikipedia.org/wiki/Philosophie"
         
-# url = "https://fr.wikipedia.org/wiki/Les_Cent_Trucs"
-# while not is_philosophie(url):
-#     print(url)
-#     url = get_first_link(url)
-# print("FOUND PHILOSOPHIE!!!!!!!!!!!!!!!!!")
-# exit()
+
+
+url = "https://fr.wikipedia.org/wiki/Casquette"
+jumps = 0
+while not is_philosophie(url):
+    print(url)
+    url = get_first_link(url)
+    jumps += 1
+print(f"FOUND in {jumps} jumps")
+
+# search_term = ["internet truc", "minecraft"]
+
+# for term in search_term:
+#     url = get_url_from_search(term)
+
+#     jumps = 0
+#     while not is_philosophie(url):
+#         print(url)
+#         url = get_first_link(url)
+#         jumps += 1
+#     print("FOUND in {jumps} jumps")
     
     
 
 
-url_to_test = [
-    # "https://fr.wikipedia.org/wiki/Les_Cent_Trucs",
-    # "https://fr.wikipedia.org/wiki/Cin%C3%A9ma_muet",
-    # "https://fr.wikipedia.org/wiki/Temps",
-    "https://fr.wikipedia.org/wiki/Anglais",
-    # "https://fr.wikipedia.org/wiki/R%C3%A9alit%C3%A9",
-    # "https://fr.wikipedia.org/wiki/Alphabet_phon%C3%A9tique_international",
-    # "https://fr.wikipedia.org/wiki/API_%C9%AA",
-]
+# url_to_test = [
+#     "https://fr.wikipedia.org/wiki/Les_Cent_Trucs",
+#     "https://fr.wikipedia.org/wiki/Cin%C3%A9ma_muet",
+#     "https://fr.wikipedia.org/wiki/Temps",
+#     "https://fr.wikipedia.org/wiki/Anglais",
+#     "https://fr.wikipedia.org/wiki/R%C3%A9alit%C3%A9",
+#     "https://fr.wikipedia.org/wiki/Alphabet_phon%C3%A9tique_international",
+# ]
 
 
-for url in url_to_test:
-    print(get_first_link(url))
+# for url in url_to_test:
+#     print(get_first_link(url))
 
 
 

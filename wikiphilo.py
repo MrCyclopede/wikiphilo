@@ -89,68 +89,69 @@ def is_philosophie(url):
     return url == "https://fr.wikipedia.org/wiki/Philosophie"
 
 
-#=============== FROM ARTICLES LIST ==============
+def from_articles_list():
+    urls = articles.get_url_list()
+    for url in urls:
+        print("\n\n=====================")
+        jumps = 0
+        while not is_philosophie(url):
+            print(urllib.parse.unquote(url).split("/")[-1])
+            try:
+                url = get_first_link(url)
+            except Exception as e:
+                print("EXCEPTION: ", e)
+                break
+            jumps += 1
+        print(f"Found Philosophie in {jumps} jumps")
 
-urls = articles.get_url_list()
-for url in urls:
-    print("\n\n=====================")
+
+def from_search_list():
+    search_term = ["internet truc", "minecraft", "Cinema muet", "Temps", "Anglais", "Realite", "alphabet phonetique international"]
+
+    for term in search_term:
+        print(f'\n\nSearching for "{term}"\n')
+        url = resolve_page_for_search(term)
+
+        jumps = 0
+        while not is_philosophie(url):
+            print(urllib.parse.unquote(url).split("/")[-1])
+            url = get_first_link(url)
+            jumps += 1
+        print(f"Found Philosophie in {jumps} jumps")
+
+
+def from_link():
+    url = "https://fr.wikipedia.org/wiki/Figueras"
     jumps = 0
     while not is_philosophie(url):
-        print(urllib.parse.unquote(url).split("/")[-1])
-        try:
-            url = get_first_link(url)
-        except Exception as e:
-            print("EXCEPTION: ", e)
-            break
+        print(urllib.parse.unquote(url))
+        url = get_first_link(url)
         jumps += 1
     print(f"Found Philosophie in {jumps} jumps")
 
-
-#=============== FROM MANY SEARCH ==============
-
-# search_term = ["internet truc", "minecraft", "Cinema muet", "Temps", "Anglais", "Realite", "alphabet phonetique international"]
-
-# for term in search_term:
-#     print(f'\n\nSearching for "{term}"\n')
-#     url = resolve_page_for_search(term)
-
-#     jumps = 0
-#     while not is_philosophie(url):
-#         print(urllib.parse.unquote(url).split("/")[-1])
-#         url = get_first_link(url)
-#         jumps += 1
-#     print(f"Found Philosophie in {jumps} jumps")
-
-
-# =============== FROM ONE==============
-
-# url = "https://fr.wikipedia.org/wiki/Figueras"
-# jumps = 0
-# while not is_philosophie(url):
-#     print(urllib.parse.unquote(url))
-#     url = get_first_link(url)
-#     jumps += 1
-# print(f"Found Philosophie in {jumps} jumps")
-
-    
-#=============== TESTS ==============
-
-# url_to_test = [
-#     "https://fr.wikipedia.org/wiki/Les_Cent_Trucs",
-#     "https://fr.wikipedia.org/wiki/Cin%C3%A9ma_muet",
-#     "https://fr.wikipedia.org/wiki/Temps",
-#     "https://fr.wikipedia.org/wiki/Anglais",
-#     "https://fr.wikipedia.org/wiki/R%C3%A9alit%C3%A9",
-#     "https://fr.wikipedia.org/wiki/Alphabet_phon%C3%A9tique_international",
-#     "https://fr.wikipedia.org/wiki/Anthropologie",
-#     "https://fr.wikipedia.org/wiki/Casquette",
-    # "https://fr.wikipedia.org/wiki/Latin",
-#         "https://fr.wikipedia.org/wiki/Polissage",
-# ]
+        
+def tests_urls():
+    url_to_test = [
+        "https://fr.wikipedia.org/wiki/Les_Cent_Trucs",
+        "https://fr.wikipedia.org/wiki/Cin%C3%A9ma_muet",
+        "https://fr.wikipedia.org/wiki/Temps",
+        "https://fr.wikipedia.org/wiki/Anglais",
+        "https://fr.wikipedia.org/wiki/R%C3%A9alit%C3%A9",
+        "https://fr.wikipedia.org/wiki/Alphabet_phon%C3%A9tique_international",
+        "https://fr.wikipedia.org/wiki/Anthropologie",
+        "https://fr.wikipedia.org/wiki/Casquette",
+        "https://fr.wikipedia.org/wiki/Latin",
+            "https://fr.wikipedia.org/wiki/Polissage",
+    ]
 
 
-# for url in url_to_test:
-#     print(get_first_link(url))
+    for url in url_to_test:
+        print(get_first_link(url))
 
 
 
+if __name__ == "__main__":
+    from_articles_list()
+    # from_search_list()
+    # from_link()
+    # tests_urls()

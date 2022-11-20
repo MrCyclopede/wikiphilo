@@ -23,4 +23,5 @@ def get_url_list():
 
     return url_list
 
-# print(get_url_list())
+if __name__ == "__main__":
+    print(get_url_list())

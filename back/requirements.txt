@@ -1,0 +1,4 @@
+beautifulsoup4
+flask
+flask-RESTful
+flask-cors
